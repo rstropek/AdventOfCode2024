@@ -18,7 +18,7 @@ fn parse_input(contents: &str) -> Result<(Vec<i32>, Vec<i32>)> {
 
 fn main() -> Result<()> {
     let input_type = args().nth(1).unwrap_or("test".to_string());
-    let contents = read_input_file(&input_type)?;
+    let contents = read_input_file("day01", &input_type)?;
     let (mut numbers_a, mut numbers_b) = parse_input(&contents)?;
 
     // Part 1
