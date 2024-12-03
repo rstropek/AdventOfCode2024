@@ -20,7 +20,7 @@ enum Direction {
     Falling,
 }
 
-fn part1(numbers_collection: &[Vec<i32>], drop_one: bool) {
+fn solve(numbers_collection: &[Vec<i32>], drop_one: bool) {
     let mut number_of_safe = 0;
     for numbers in numbers_collection {
         for drop_ix in -1..numbers.len() as i32 {
@@ -65,8 +65,8 @@ fn main() -> Result<()> {
     let contents = read_input_file("day02", &input_type)?;
     let numbers_collection = parse_input(&contents);
 
-    part1(&numbers_collection, false);
-    part1(&numbers_collection, true);
+    solve(&numbers_collection, false);
+    solve(&numbers_collection, true);
 
     Ok(())
 }
