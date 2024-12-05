@@ -2,6 +2,7 @@ use anyhow::Result;
 use helpers::read_input_file;
 use std::env::args;
 use regex::Regex;
+use std::time::Instant;
 
 #[derive(Debug)]	
 enum Part {
@@ -46,9 +47,20 @@ fn solve(contents: &str, part: &Part) -> Result<()> {
 }
 
 fn main() -> Result<()> {
+    let total_time = Instant::now();
     let input_type = args().nth(1).unwrap_or("test".to_string());
     let contents = read_input_file("day03", &input_type)?;
+
+    // Measure Part One
+    let part_one_time = Instant::now();
     solve(&contents, &Part::One)?;
+    println!("Part One took: {:?}", part_one_time.elapsed());
+
+    // Measure Part Two
+    let part_two_time = Instant::now();
     solve(&contents, &Part::Two)?;
+    println!("Part Two took: {:?}", part_two_time.elapsed());
+
+    println!("Total runtime: {:?}", total_time.elapsed());
     Ok(())
 }

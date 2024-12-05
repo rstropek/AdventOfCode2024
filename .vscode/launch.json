@@ -11,11 +11,11 @@
             "cargo": {
                 "args": [
                     "build",
-                    "--bin=day02",
-                    "--package=day02"
+                    "--bin=day04",
+                    "--package=day04"
                 ],
                 "filter": {
-                    "name": "day02",
+                    "name": "day04",
                     "kind": "bin"
                 }
             },

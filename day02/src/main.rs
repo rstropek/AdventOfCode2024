@@ -63,10 +63,23 @@ fn solve(numbers_collection: &[Vec<i32>], drop_one: bool) {
 fn main() -> Result<()> {
     let input_type = args().nth(1).unwrap_or("test".to_string());
     let contents = read_input_file("day02", &input_type)?;
+    
+    let parse_start = std::time::Instant::now();
     let numbers_collection = parse_input(&contents);
-
+    let parse_duration = parse_start.elapsed();
+    
+    let part1_start = std::time::Instant::now();
     solve(&numbers_collection, false);
+    let part1_duration = part1_start.elapsed();
+    
+    let part2_start = std::time::Instant::now();
     solve(&numbers_collection, true);
+    let part2_duration = part2_start.elapsed();
+    
+    println!("Parse time: {:?}", parse_duration);
+    println!("Part 1 time: {:?}", part1_duration);
+    println!("Part 2 time: {:?}", part2_duration);
+    println!("Total time: {:?}", parse_duration + part1_duration + part2_duration);
 
     Ok(())
 }
