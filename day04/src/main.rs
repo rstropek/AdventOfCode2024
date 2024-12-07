@@ -18,7 +18,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn part1(content_lines: &Vec<Vec<u8>>) {
+fn part1(content_lines: &[Vec<u8>]) {
     let mut xmas_count = 0;
     for y in 0..content_lines.len() {
         for x in 0..content_lines[y].len() {
@@ -60,7 +60,7 @@ fn part1(content_lines: &Vec<Vec<u8>>) {
     println!("XMAS count: {}", xmas_count);
 }
 
-fn part2(content_lines: &Vec<Vec<u8>>) {
+fn part2(content_lines: &[Vec<u8>]) {
     let mut mas_count = 0;
     for y in 0..content_lines.len() {
         for x in 0..content_lines[y].len() {
@@ -72,14 +72,13 @@ fn part2(content_lines: &Vec<Vec<u8>>) {
                     content_lines[y + 1][x - 1],
                     content_lines[y + 1][x + 1],
                 ];
-                if pattern[0] == b'A' {
-                    if ((pattern[1] == b'M' && pattern[4] == b'S')
+                if pattern[0] == b'A'
+                    && ((pattern[1] == b'M' && pattern[4] == b'S')
                         || (pattern[1] == b'S' && pattern[4] == b'M'))
-                        && ((pattern[2] == b'M' && pattern[3] == b'S')
-                            || (pattern[2] == b'S' && pattern[3] == b'M'))
-                    {
-                        mas_count += 1;
-                    }
+                    && ((pattern[2] == b'M' && pattern[3] == b'S')
+                        || (pattern[2] == b'S' && pattern[3] == b'M'))
+                {
+                    mas_count += 1;
                 }
             }
         }

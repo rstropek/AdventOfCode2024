@@ -1,24 +1,24 @@
 use anyhow::Result;
 use helpers::read_input_file;
-use std::env::args;
 use regex::Regex;
+use std::env::args;
 use std::time::Instant;
 
-#[derive(Debug)]	
+#[derive(Debug)]
 enum Part {
     One,
     Two,
 }
 
 fn solve(contents: &str, part: &Part) -> Result<()> {
-    let re;
-    match part {
-        Part::One => re = Regex::new(r"mul\((\d{1,3}),(\d{1,3})\)")?,
-        Part::Two => re = Regex::new(r"mul\((\d{1,3}),(\d{1,3})\)|do\(\)|don't\(\)")?,
+    let re = match part {
+        Part::One => Regex::new(r"mul\((\d{1,3}),(\d{1,3})\)")?,
+        Part::Two => Regex::new(r"mul\((\d{1,3}),(\d{1,3})\)|do\(\)|don't\(\)")?,
     };
 
     let mut enabled = true;
-    let sum: i32 = re.captures_iter(&contents)
+    let sum: i32 = re
+        .captures_iter(contents)
         .filter_map(|cap| {
             if cap.get(0).unwrap().as_str() == "do()" {
                 enabled = true;

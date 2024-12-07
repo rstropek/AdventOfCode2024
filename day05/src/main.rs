@@ -1,5 +1,5 @@
 use helpers::read_input_file;
-use std::{env::args, ops::Index};
+use std::env::args;
 
 use anyhow::Result;
 
@@ -54,7 +54,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn is_valid(rules: &Vec<(u32, u32)>, update: &Vec<u32>) -> bool {
+fn is_valid(rules: &[(u32, u32)], update: &[u32]) -> bool {
     let mut is_valid = true;
     for (first, second) in rules.iter() {
         // Get index of first in update
