@@ -108,24 +108,24 @@ fn main() -> Result<()> {
                     match direction {
                         Direction::Horizontal => {
                             let mut new_x = new_pos.x + 1;
-                            while !positions.contains(&Position { x: new_x, y: pos.y }) {
+                            while new_x < contents[0].len() as i32 && !positions.contains(&Position { x: new_x, y: pos.y }) {
                                 visited.insert((Position { x: new_x, y: pos.y }, direction));
                                 new_x += 1;
                             }
                             let mut new_x = new_pos.x - 1;
-                            while !positions.contains(&Position { x: new_x, y: pos.y }) {
+                            while new_x >= 0 && !positions.contains(&Position { x: new_x, y: pos.y }) {
                                 visited.insert((Position { x: new_x, y: pos.y }, direction));
                                 new_x -= 1;
                             }
                         }
                         Direction::Vertical => {
                             let mut new_y = new_pos.y + 1;
-                            while !positions.contains(&Position { x: pos.x, y: new_y }) {
+                            while new_y < contents.len() as i32 && !positions.contains(&Position { x: pos.x, y: new_y }) {
                                 visited.insert((Position { x: pos.x, y: new_y }, direction));
                                 new_y += 1;
                             }
                             let mut new_y = new_pos.y - 1;
-                            while !positions.contains(&Position { x: pos.x, y: new_y }) {
+                            while new_y >= 0 && !positions.contains(&Position { x: pos.x, y: new_y }) {
                                 visited.insert((Position { x: pos.x, y: new_y }, direction));
                                 new_y -= 1;
                             }
