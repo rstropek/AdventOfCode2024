@@ -1,5 +1,5 @@
 use anyhow::Result;
-use helpers::{read_input_file, SquareText, DIRECTIONS};
+use helpers::read_input_file;
 use regex::Regex;
 use std::env::args;
 
@@ -25,37 +25,19 @@ fn main() -> Result<()> {
         let machines = parse(&machines_str, correction);
 
         let mut total_costs = 0;
-        for (i, machine) in machines.iter().enumerate() {
-            println!("{}", i);
-            let mut min_costs = u64::MAX;
-            let mut min_moves = (0, 0);
-            for b in 0..machine.prize.y / machine.button_b.y {
-                let a = (machine.prize.x - b * machine.button_b.x) / machine.button_a.x;
-                if machine.prize.x == b * machine.button_b.x + a * machine.button_a.x
-                    && machine.prize.y == b * machine.button_b.y + a * machine.button_a.y
-                {
-                    let costs = a * 3 + b;
-                    if costs < min_costs {
-                        min_costs = costs;
-                        min_moves = (a, b);
-                    }
-                }
-            }
-            for a in 0..machine.prize.y / machine.button_a.y {
-                let b = (machine.prize.x - a * machine.button_a.x) / machine.button_b.x;
-                if machine.prize.x == b * machine.button_b.x + a * machine.button_a.x
-                    && machine.prize.y == b * machine.button_b.y + a * machine.button_a.y
-                {
-                    let costs = a * 3 + b;
-                    if costs < min_costs {
-                        min_costs = costs;
-                        min_moves = (a, b);
-                    }
-                }
-            }
-            if min_costs < u64::MAX {
-                //println!("{} {:?}", min_costs, min_moves);
-                total_costs += min_costs;
+        for machine in machines {
+            let xp = machine.prize.x as f64;
+            let yp = machine.prize.y as f64;
+            let xa = machine.button_a.x as f64;
+            let ya = machine.button_a.y as f64;
+            let xb = machine.button_b.x as f64;
+            let yb = machine.button_b.y as f64;
+            let x = 3.0 * (xp * yb - xb * yp) / (xa * yb - xb * ya) / 3.0;
+            let y = 3.0 * (xa * yp - xp * ya) / (xa * yb - xb * ya) / 3.0;
+            if x.fract() == 0.0 && y.fract() == 0.0 {
+                let costs = x as u64 * 3 + y as u64;
+                //println!("{} {:?}", costs, (x, y));
+                total_costs += costs;
             }
         }
 
@@ -64,8 +46,6 @@ fn main() -> Result<()> {
 
     Ok(())
 }
-
-// 35196
 
 fn parse(machines_str: &Vec<&str>, correction: u64) -> Vec<Machine> {
     let number_pattern = Regex::new(r"[+-]\d+").unwrap();
