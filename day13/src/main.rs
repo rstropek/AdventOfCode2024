@@ -32,8 +32,8 @@ fn main() -> Result<()> {
             let ya = machine.button_a.y as f64;
             let xb = machine.button_b.x as f64;
             let yb = machine.button_b.y as f64;
-            let x = 3.0 * (xp * yb - xb * yp) / (xa * yb - xb * ya) / 3.0;
-            let y = 3.0 * (xa * yp - xp * ya) / (xa * yb - xb * ya) / 3.0;
+            let x = (xp * yb - xb * yp) / (xa * yb - xb * ya);
+            let y = (xa * yp - xp * ya) / (xa * yb - xb * ya);
             if x.fract() == 0.0 && y.fract() == 0.0 {
                 let costs = x as u64 * 3 + y as u64;
                 //println!("{} {:?}", costs, (x, y));
