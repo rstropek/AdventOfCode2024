@@ -7,15 +7,15 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug executable 'day16'",
+      "name": "Debug executable 'day17'",
       "cargo": {
-        "args": ["build", "--bin=day16", "--package=day16"],
+        "args": ["build", "--bin=day17", "--package=day17"],
         "filter": {
-          "name": "day16",
+          "name": "day17",
           "kind": "bin"
         }
       },
-      "args": ["test"],
+      "args": ["real"],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal"
     }
