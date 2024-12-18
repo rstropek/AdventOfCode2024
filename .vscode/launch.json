@@ -7,6 +7,21 @@
     {
       "type": "lldb",
       "request": "launch",
+      "name": "Debug executable 'day18'",
+      "cargo": {
+        "args": ["build", "--bin=day18", "--package=day18"],
+        "filter": {
+          "name": "day18",
+          "kind": "bin"
+        }
+      },
+      "args": ["real"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
       "name": "Debug executable 'day17'",
       "cargo": {
         "args": ["build", "--bin=day17", "--package=day17"],
