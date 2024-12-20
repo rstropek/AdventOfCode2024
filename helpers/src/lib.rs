@@ -33,6 +33,17 @@ pub trait SquareText {
     fn get_i32(&self, x: i32, y: i32) -> u8 {
         self.get(x as usize, y as usize)
     }
+
+    fn find_byte(&self, c: u8) -> (usize, usize) {
+        for y in 0..self.get_height() {
+            for x in 0..self.get_width() {
+                if self.get(x, y) == c {
+                    return (x, y);
+                }
+            }
+        }
+        (0, 0)
+    }
 }
 
 impl SquareText for &[Vec<u8>] {

@@ -7,30 +7,30 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug executable 'day18'",
+      "name": "Debug executable 'day20'",
       "cargo": {
-        "args": ["build", "--bin=day18", "--package=day18"],
+        "args": ["build", "--bin=day20", "--package=day20"],
         "filter": {
-          "name": "day18",
+          "name": "day20",
           "kind": "bin"
         }
       },
-      "args": ["real"],
+      "args": ["test"],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal"
     },
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug executable 'day17'",
+      "name": "Debug executable 'day20'",
       "cargo": {
-        "args": ["build", "--bin=day17", "--package=day17"],
+        "args": ["build", "--bin=day20", "--package=day20"],
         "filter": {
-          "name": "day17",
+          "name": "day20",
           "kind": "bin"
         }
       },
-      "args": ["real"],
+      "args": ["test"],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal"
     }
