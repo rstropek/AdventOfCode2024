@@ -64,3 +64,4 @@ impl SquareText for Vec<Vec<u8>> {
 }
 
 pub const DIRECTIONS: [(i32, i32); 4] = [(0, -1), (1, 0), (0, 1), (-1, 0)];
+pub const DIRECTIONS_USIZE: [(usize, usize); 4] = [(0, 1), (0, usize::MAX), (1, 0), (usize::MAX, 0)];
