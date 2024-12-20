@@ -19,7 +19,11 @@ fn main() {
     let original_min = find_shortest_path(&graph, start, end);
 
     let cheats = get_cheats(&contents, 2);
-    //let cheats = vec![((7, 1), (10, 1), 3)];
+    for c in &cheats {
+        println!("{:?}", c);
+    }
+
+    let cheats = vec![((7, 1), (10, 1), 3)];
     let mut saved_time: HashMap<usize, usize> = HashMap::new();
     for (cheat_start, cheat_end, walls) in cheats {
         let mut graph = graph.clone();
@@ -63,7 +67,7 @@ fn build_graph(contents: &[Vec<u8>]) -> Graph {
 }
 
 fn get_cheats(contents: &[Vec<u8>], max_walls: usize) -> Vec<((usize, usize), (usize, usize), usize)> {
-    let mut cheats = Vec::new();
+    let mut cheats = HashSet::new();
     let height = contents.len();
     let width = contents[0].len();
 
@@ -74,52 +78,26 @@ fn get_cheats(contents: &[Vec<u8>], max_walls: usize) -> Vec<((usize, usize), (u
                 continue;
             }
 
-            // BFS to find reachable points through walls
-            let mut visited = HashSet::new();
-            let mut queue = VecDeque::new();
-
-            // Add all walls in the first layer
-            for (dx, dy) in DIRECTIONS_USIZE {
-                let next_x = x1.wrapping_add(dx);
-                let next_y = y1.wrapping_add(dy);
-
-                if next_x >= width || next_y >= height || contents[next_y][next_x] != b'#' {
-                    continue;
-                }
-
-                visited.insert((next_x, next_y));
-                queue.push_back(((next_x, next_y), 1));
-            }
-
-            while let Some(((x, y), walls)) = queue.pop_front() {
-                // If we've found another open space through walls, add it as a cheat
-                if contents[y][x] == b'.' {
-                    cheats.push(((x1, y1), (x, y), walls + 1));
-                    continue;
-                }
-
-                // Don't explore further if we've hit max walls
-                if walls >= max_walls {
-                    continue;
-                }
-
-                // Check all directions
-                for (dx, dy) in DIRECTIONS_USIZE {
-                    let next_x = x.wrapping_add(dx);
-                    let next_y = y.wrapping_add(dy);
-
-                    if next_x >= width || next_y >= height || visited.contains(&(next_x, next_y)) {
+            // Find all (x, y) whose manhattan distance is >= 2 and <= max_walls + 1
+            // and where contents[y][x] is not a wall. Store them in cheats with distance = manhattan distance 
+            for y2 in 0..height {
+                for x2 in 0..width {
+                    if contents[y2][x2] != b'.' {
                         continue;
                     }
 
-                    visited.insert((next_x, next_y));
-                    queue.push_back(((next_x, next_y), walls + 1));
+                    let manhattan_dist = x1.abs_diff(x2) + y1.abs_diff(y2);
+                    if manhattan_dist >= 2 && manhattan_dist <= max_walls + 1 {
+                        cheats.insert(((x1, y1), (x2, y2), manhattan_dist));
+                        cheats.insert(((x2, y2), (x1, y1), manhattan_dist));
+                    }
                 }
             }
+
         }
     }
 
-    cheats
+    cheats.into_iter().collect()
 }
 
 fn find_shortest_path(graph: &Graph, start: (usize, usize), end: (usize, usize)) -> usize {
