@@ -1,126 +1,190 @@
 use helpers::{read_input_file, SquareText, DIRECTIONS_USIZE};
-use std::env::args;
-use std::collections::{HashMap, VecDeque, HashSet};
-
-type Graph = HashMap<(usize, usize), Vec<(usize, usize, usize)>>;
+use std::{
+    collections::{HashMap, HashSet, VecDeque},
+    env::args,
+};
 
 fn main() {
     let input_type = args().nth(1).unwrap_or("test".to_string());
     let contents = read_input_file("day20", &input_type).unwrap();
 
-    let contents: Vec<Vec<u8>> = contents
-        .lines()
-        .map(|line| line.as_bytes().to_vec())
-        .collect();
+    let mut contents: Vec<Vec<u8>> = contents.lines().map(|line| line.as_bytes().to_vec()).collect();
     let start = contents.find_byte(b'S');
     let end = contents.find_byte(b'E');
+    contents[start.1][start.0] = b'.';
+    contents[end.1][end.0] = b'.';
 
-    let graph = build_graph(&contents);
-    let original_min = find_shortest_path(&graph, start, end);
-
-    let cheats = get_cheats(&contents, 2);
-    for c in &cheats {
-        println!("{:?}", c);
+    const CHEAT_DURATION_1: usize = 2;
+    let track = find_track(&contents, start, end);
+    let mut all_cheats = HashSet::new();
+    for (p, _) in &track {
+        let cheats = find_shortcuts::<CHEAT_DURATION_1>(&contents, &track, *p);
+        all_cheats.extend(cheats);
     }
 
-    let cheats = vec![((7, 1), (10, 1), 3)];
-    let mut saved_time: HashMap<usize, usize> = HashMap::new();
-    for (cheat_start, cheat_end, walls) in cheats {
-        let mut graph = graph.clone();
-        graph.entry(cheat_start).or_insert_with(|| vec![(cheat_end.0, cheat_end.1, walls)]).push((cheat_end.0, cheat_end.1, walls));
-        let min = find_shortest_path(&graph, start, end);
+    //let count = all_cheats.iter().filter(|cheat| cheat.saving >= 100).count();
+    //println!("{} cheats save at least 100", count);
 
-        if min < original_min {
-            *saved_time.entry(original_min - min).or_insert(0) += 1;
-        }
-    }
+    const CHEAT_DURATION_2: usize = 20;
+    let all_cheats = find_all_cheats::<CHEAT_DURATION_2>(&contents, &track);
 
-    for (saved, count) in saved_time {
-        println!("{}: {}", saved, count);
-    }
-}
-
-fn build_graph(contents: &[Vec<u8>]) -> Graph {
-    let mut graph = HashMap::new();
+    let interesting_cheat = all_cheats.get(&Cheat2 { start: (1, 4), end: (3, 7)});
+    println!("cheat {:?}", interesting_cheat);
+    let interesting_start = track.get(&(1, 3)).unwrap();
+    println!("start {:?}", interesting_start);
     
-    for y in 0..contents.len() {
-        for x in 0..contents[0].len() {
-            if contents[y][x] != b'#' {
-                let mut neighbors = Vec::new();
-                
-                for (dx, dy) in DIRECTIONS_USIZE {
-                    let next_x = x.wrapping_add(dx);
-                    let next_y = y.wrapping_add(dy);
-                    
-                    if next_y < contents.len() && next_x < contents[0].len() 
-                        && contents[next_y][next_x] != b'#' {
-                        neighbors.push((next_x, next_y, 1));
-                    }
-                }
-                
-                graph.insert((x, y), neighbors);
-            }
-        }
-    }
-    
-    graph
-}
-
-fn get_cheats(contents: &[Vec<u8>], max_walls: usize) -> Vec<((usize, usize), (usize, usize), usize)> {
     let mut cheats = HashSet::new();
-    let height = contents.len();
-    let width = contents[0].len();
-
-    // For each open space
-    for y1 in 0..height {
-        for x1 in 0..width {
-            if contents[y1][x1] != b'.' {
-                continue;
-            }
-
-            // Find all (x, y) whose manhattan distance is >= 2 and <= max_walls + 1
-            // and where contents[y][x] is not a wall. Store them in cheats with distance = manhattan distance 
-            for y2 in 0..height {
-                for x2 in 0..width {
-                    if contents[y2][x2] != b'.' {
-                        continue;
-                    }
-
-                    let manhattan_dist = x1.abs_diff(x2) + y1.abs_diff(y2);
-                    if manhattan_dist >= 2 && manhattan_dist <= max_walls + 1 {
-                        cheats.insert(((x1, y1), (x2, y2), manhattan_dist));
-                        cheats.insert(((x2, y2), (x1, y1), manhattan_dist));
+    for (&start, &start_duration) in &track {
+        for direction in DIRECTIONS_USIZE {
+            let (x, y) = (start.0.wrapping_add(direction.0), start.1.wrapping_add(direction.1));
+            if contents[y][x] == b'#' && !cheats.iter().any(|c: &Cheat| c.start == (x, y)) {
+                for cheat in all_cheats.keys().filter(|cheat| cheat.start == (x, y)) {
+                    let end_duration = all_cheats[cheat];
+                    let manhattan_dist = x.abs_diff(cheat.end.0) + y.abs_diff(cheat.end.1) + 1;
+                    if end_duration + manhattan_dist < start_duration {
+                        cheats.insert(Cheat {
+                            start: (x, y),
+                            end: cheat.end,
+                            saving: start_duration - end_duration - manhattan_dist,
+                        });
                     }
                 }
             }
-
         }
     }
 
-    cheats.into_iter().collect()
+    for cheat in &cheats {
+        if cheat.saving == 76 {
+            println!("76: Cheat from {:?} to {:?} saves {}", cheat.start, cheat.end, cheat.saving);
+        }
+    }
+
+    let mut cheats_by_saving = HashMap::new();
+    for cheat in cheats {
+        *cheats_by_saving.entry(cheat.saving).or_insert(0) += 1;
+    }
+
+    let mut savings: Vec<_> = cheats_by_saving.iter().collect();
+    savings.sort_by_key(|(&saving, _)| saving);
+    for (&saving, count) in savings {
+        println!("{1} cheats save {0}", saving, count);
+    }
+
 }
 
-fn find_shortest_path(graph: &Graph, start: (usize, usize), end: (usize, usize)) -> usize {
-    let mut visited = HashSet::new();
-    let mut queue = VecDeque::new();
-    
-    queue.push_back((start, 0)); // (position, distance)
-    visited.insert(start);
-    
-    while let Some((current, path_len)) = queue.pop_front() {
-        if current == end {
-            return path_len;
+fn find_track(contents: &[Vec<u8>], start: (usize, usize), end: (usize, usize)) -> HashMap<(usize, usize), usize> {
+    let mut current = start;
+    let mut previous = None;
+    let mut track = vec![];
+
+    while current != end {
+        track.push(current);
+
+        let mut next = current;
+        for direction in DIRECTIONS_USIZE {
+            let (x, y) = (current.0.wrapping_add(direction.0), current.1.wrapping_add(direction.1));
+            if contents[y][x] == b'.' && (previous.is_none() || previous.unwrap() != (x, y)) {
+                next = (x, y);
+            }
         }
-        
-        if let Some(neighbors) = graph.get(&current) {
-            for &next in neighbors {
-                if !visited.contains(&(next.0, next.1)) {
-                    visited.insert((next.0, next.1));
-                    queue.push_back(((next.0, next.1), path_len + next.2));
+
+        previous = Some(current);
+        current = next;
+    }
+
+    track.push(current);
+    track.iter().enumerate().map(|(i, &pos)| (pos, track.len() - i - 1)).collect()
+}
+
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+struct Cheat {
+    start: (usize, usize),
+    end: (usize, usize),
+    saving: usize,
+}
+
+struct CheatStep {
+    start: (usize, usize),
+    current: (usize, usize),
+    duration: usize,
+}
+
+fn find_shortcuts<const N: usize>(contents: &[Vec<u8>], track: &HashMap<(usize, usize), usize>, start: (usize, usize)) -> HashSet<Cheat> {
+    let mut q = VecDeque::new();
+    for direction in DIRECTIONS_USIZE {
+        let (x, y) = (start.0.wrapping_add(direction.0), start.1.wrapping_add(direction.1));
+        if contents[y][x] == b'#' {
+            q.push_back(CheatStep {
+                start: (x, y),
+                current: (x, y),
+                duration: 1,
+            });
+        }
+    }
+
+    let mut cheats = HashSet::new();
+    while let Some(cheat_step) = q.pop_front() {
+        if cheat_step.duration == N {
+            if let Some(&end_duration) = track.get(&cheat_step.current) {
+                let start_duration = *track.get(&start).unwrap();
+                if end_duration + cheat_step.duration < start_duration {
+                    cheats.insert(Cheat {
+                        start: cheat_step.start,
+                        end: cheat_step.current,
+                        saving: start_duration - end_duration - cheat_step.duration,
+                    });
+                }
+            }
+        } else {
+            for direction in DIRECTIONS_USIZE {
+                let (x, y) = (cheat_step.current.0.wrapping_add(direction.0), cheat_step.current.1.wrapping_add(direction.1));
+                if x < contents.get_width() && y < contents.get_height() {
+                    q.push_back(CheatStep {
+                        start: cheat_step.start,
+                        current: (x, y),
+                        duration: cheat_step.duration + 1,
+                    });
                 }
             }
         }
     }
-    
-    usize::MAX // No path found
+
+    cheats
+}
+
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+struct Cheat2 {
+    start: (usize, usize),
+    end: (usize, usize),
+}
+
+fn find_all_cheats<const N: usize>(contents: &[Vec<u8>], track: &HashMap<(usize, usize), usize>) -> HashMap<Cheat2, usize> {
+    let mut cheats = HashMap::new();
+    for y in 0..contents.get_height() {
+        for x in 0..contents.get_width() {
+            if contents[y][x] == b'#' {
+                for y2 in 0..contents.get_height() {
+                    for x2 in 0..contents.get_width() {
+                        if x == 10 && y == 7 && x2 == 11 && y2 == 7 {
+                            println!("{} {}", x2, y2);
+                        }
+
+                        let manhattan_dist = x.abs_diff(x2) + y.abs_diff(y2);
+                        if manhattan_dist <= N - 1 && contents[y2][x2] == b'.' {
+                            let cheat = Cheat2 {
+                                start: (x, y),
+                                end: (x2, y2),
+                            };
+                            let new_value = *track.get(&(x2, y2)).unwrap();
+                            cheats.entry(cheat)
+                                .and_modify(|e: &mut usize| *e = (*e).min(new_value))
+                                .or_insert(new_value);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    cheats
 }
