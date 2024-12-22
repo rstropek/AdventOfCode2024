@@ -46,18 +46,35 @@ fn main() {
     }
     */
 
+    let mut keypad_map = HashMap::new();
+    for (_, &v) in &num_pad {
+        for (_, &v2) in &num_pad {
+            let paths = get_path2(v, v2, NUM_LAVA, &direction_keys);
+            keypad_map.insert((v, v2), paths);
+        }
+    }
+
+    let mut direction_map = HashMap::new();
+    for (_, &v) in &direction_pad {
+        for (_, &v2) in &direction_pad {
+            let paths = get_path2(v, v2, DIRECTION_LAVA, &direction_keys);
+            direction_map.insert((v, v2), paths);
+        }
+    }
+
     let mut sum = 0;
     for line in contents {
-        let mut paths = get_path_for_sequence(line, &num_pad, NUM_LAVA, &direction_keys);
+        let mut paths = get_path_for_sequence(line, &num_pad, &keypad_map);
 
         for _ in 0..2 {
             let mut new_paths = vec![];
             for p in &paths {
-                let next_paths = get_path_for_sequence(p, &direction_pad, DIRECTION_LAVA, &direction_keys);
+                let next_paths = get_path_for_sequence(p, &direction_pad, &direction_map);
                 new_paths.extend(next_paths);
             }
 
-            paths = new_paths;
+            let min_len = new_paths.iter().map(|p| p.len()).min().unwrap();
+            paths = new_paths.into_iter().filter(|p| p.len() == min_len).collect();
         }
 
         let shortest_path = paths.iter().min_by_key(|p| p.len()).unwrap();
@@ -70,63 +87,26 @@ fn main() {
     println!("{}", sum);
 }
 
-fn get_path_for_sequence(sequence: &str, key_pad: &HashMap<char, (i8, i8)>, lava: (i8, i8), keys: &HashMap<(i8, i8), char>) -> Vec<String> {
+fn get_path_for_sequence(sequence: &str, key_pad: &HashMap<char, (i8, i8)>, key_map: &HashMap<((i8, i8), (i8, i8)), Vec<String>>) -> Vec<String> {
     let mut pos = *key_pad.get(&'A').unwrap();
     let mut results: Vec<String> = vec![String::new()];
     for ix in 0..sequence.len() {
         let end = *key_pad.get(&(sequence.as_bytes()[ix] as char)).unwrap();
-        let sub_path = get_path2(pos, end, lava, &keys);
+        let sub_path = key_map.get(&(pos, end)).unwrap();
         let mut new_results = vec![];
         for p in results {
-            for sp in &sub_path {
+            for sp in sub_path {
                 let mut new_p = p.clone();
                 new_p.push_str(sp);
                 new_results.push(new_p);
             }
         }
-        results = new_results;
+        let min_len = new_results.iter().map(|p| p.len()).min().unwrap();
+        results = new_results.into_iter().filter(|p| p.len() == min_len).collect();
+
         pos = end;
     }
     results
-}
-
-fn get_path(start: (i8, i8), end: (i8, i8), lava: (i8, i8), keys: &HashMap<(i8, i8), u8>) -> Vec<u8> {
-    let mut path = vec![];
-    let mut pos = start;
-
-    while pos != end {
-        let mut next_pos;
-
-        let mut vertical_first = true;
-        loop {
-            next_pos = pos;
-            if vertical_first {
-                if pos.1 != end.1 {
-                    next_pos.1 = if pos.1 < end.1 { pos.1 + 1 } else { pos.1 - 1 };
-                } else if pos.0 != end.0 {
-                    next_pos.0 = if pos.0 < end.0 { pos.0 + 1 } else { pos.0 - 1 };
-                }
-            } else {
-                if pos.0 != end.0 {
-                    next_pos.0 = if pos.0 < end.0 { pos.0 + 1 } else { pos.0 - 1 };
-                } else if pos.1 != end.1 {
-                    next_pos.1 = if pos.1 < end.1 { pos.1 + 1 } else { pos.1 - 1 };
-                }
-            }
-
-            if lava == next_pos {
-                vertical_first = !vertical_first;
-            } else {
-                break;
-            }
-        }
-
-        path.push(*keys.get(&(next_pos.0 - pos.0, next_pos.1 - pos.1)).unwrap());
-        pos = next_pos;
-    }
-
-    path.push(b'A');
-    path
 }
 
 fn get_path2(start: (i8, i8), end: (i8, i8), lava: (i8, i8), keys: &HashMap<(i8, i8), char>) -> Vec<String> {
