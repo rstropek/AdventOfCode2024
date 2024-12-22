@@ -21,6 +21,8 @@ const DIRECTION_LAVA: (i8, i8) = (0, 0);
 
 const DIRECTION_KEYS: [((i8, i8), char); 4] = [((1, 0), '>'), ((0, 1), 'v'), ((-1, 0), '<'), ((0, -1), '^')];
 
+type Map = HashMap<((i8, i8), (i8, i8)), Vec<String>>;
+
 fn main() {
     let input_type = args().nth(1).unwrap_or("test".to_string());
     let contents = read_input_file("day21", &input_type).unwrap();
@@ -30,64 +32,71 @@ fn main() {
     let direction_pad = HashMap::from(DIRECTION_PAD);
     let direction_keys = HashMap::from(DIRECTION_KEYS);
 
-    /*
-    let start = *num_pad.get(&b'7').unwrap();
-    let end = *num_pad.get(&b'A').unwrap();
-    let path = get_path2(start, end, NUM_LAVA, &direction_keys);
-    for p in path {
-        println!("{}", String::from_utf8(p.clone()).unwrap());
-    }
-
-    let start = *direction_pad.get(&b'A').unwrap();
-    let end = *direction_pad.get(&b'>').unwrap();
-    let path = get_path2(start, end, DIRECTION_LAVA, &direction_keys);
-    for p in path {
-        println!("{}", String::from_utf8(p.clone()).unwrap());
-    }
-    */
-
     let mut keypad_map = HashMap::new();
-    for (_, &v) in &num_pad {
-        for (_, &v2) in &num_pad {
-            let paths = get_path2(v, v2, NUM_LAVA, &direction_keys);
+    for &v in num_pad.values() {
+        for &v2 in num_pad.values() {
+            let paths = get_path(v, v2, NUM_LAVA, &direction_keys);
             keypad_map.insert((v, v2), paths);
         }
     }
 
     let mut direction_map = HashMap::new();
-    for (_, &v) in &direction_pad {
-        for (_, &v2) in &direction_pad {
-            let paths = get_path2(v, v2, DIRECTION_LAVA, &direction_keys);
+    for &v in direction_pad.values() {
+        for &v2 in direction_pad.values() {
+            let paths = get_path(v, v2, DIRECTION_LAVA, &direction_keys);
             direction_map.insert((v, v2), paths);
         }
     }
 
     let mut sum = 0;
-    for line in contents {
-        let mut paths = get_path_for_sequence(line, &num_pad, &keypad_map);
-
-        for _ in 0..2 {
-            let mut new_paths = vec![];
-            for p in &paths {
-                let next_paths = get_path_for_sequence(p, &direction_pad, &direction_map);
-                new_paths.extend(next_paths);
-            }
-
-            let min_len = new_paths.iter().map(|p| p.len()).min().unwrap();
-            paths = new_paths.into_iter().filter(|p| p.len() == min_len).collect();
-        }
-
-        let shortest_path = paths.iter().min_by_key(|p| p.len()).unwrap();
-
+    for line in &contents {
+        let paths = get_path_for_sequence(line, &num_pad, &keypad_map);
+        let min_len = paths.iter().map(|p| recurse::<2>(p, 0, &direction_pad, &direction_map, &mut HashMap::new())).min().unwrap();
         let num = line[..line.len() - 1].parse::<usize>().unwrap();
-        println!("{} {}", num, shortest_path.len());
-        sum += num * shortest_path.len();
+        sum += num * min_len;
+    }
+    println!("Part 1: {}", sum);
+
+    let mut sum = 0;
+    for line in &contents {
+        let paths = get_path_for_sequence(line, &num_pad, &keypad_map);
+        let min_len = paths.iter().map(|p| recurse::<25>(p, 0, &direction_pad, &direction_map, &mut HashMap::new())).min().unwrap();
+        let num = line[..line.len() - 1].parse::<usize>().unwrap();
+        sum += num * min_len;
     }
 
-    println!("{}", sum);
+    println!("Part 2: {}", sum);
 }
 
-fn get_path_for_sequence(sequence: &str, key_pad: &HashMap<char, (i8, i8)>, key_map: &HashMap<((i8, i8), (i8, i8)), Vec<String>>) -> Vec<String> {
+fn recurse<const R: usize>(sequence: &str, level: usize, pad: &HashMap<char, (i8, i8)>, map: &Map, cache: &mut HashMap<(String, usize), usize>) -> usize {
+    if level == R {
+        return sequence.len();
+    }
+
+    let mut total_len = 0;
+    let mut pos = *pad.get(&'A').unwrap();
+    for c in sequence.chars() {
+        let end = *pad.get(&c).unwrap();
+        let sub_path = map.get(&(pos, end)).unwrap();
+        let mut lens = Vec::with_capacity(sub_path.len());
+        for sp in sub_path {
+            if let Some(len) = cache.get(&(sp.clone(), level + 1)) {
+                lens.push(*len);
+            } else {
+                let len = recurse::<R>(sp, level + 1, pad, map, cache);
+                cache.insert((sp.clone(), level + 1), len);
+                lens.push(len);
+            }
+        }
+
+        total_len += lens.iter().min().unwrap();
+        pos = end;
+    }
+
+    total_len
+}
+
+fn get_path_for_sequence(sequence: &str, key_pad: &HashMap<char, (i8, i8)>, key_map: &Map) -> Vec<String> {
     let mut pos = *key_pad.get(&'A').unwrap();
     let mut results: Vec<String> = vec![String::new()];
     for ix in 0..sequence.len() {
@@ -109,7 +118,7 @@ fn get_path_for_sequence(sequence: &str, key_pad: &HashMap<char, (i8, i8)>, key_
     results
 }
 
-fn get_path2(start: (i8, i8), end: (i8, i8), lava: (i8, i8), keys: &HashMap<(i8, i8), char>) -> Vec<String> {
+fn get_path(start: (i8, i8), end: (i8, i8), lava: (i8, i8), keys: &HashMap<(i8, i8), char>) -> Vec<String> {
     use std::collections::{HashSet, VecDeque};
 
     let mut paths = Vec::new();
