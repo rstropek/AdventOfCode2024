@@ -1,0 +1,9 @@
+[package]
+name = "day24"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+helpers = { path = "../helpers" }
+anyhow = "1"
+regex = "1" 
